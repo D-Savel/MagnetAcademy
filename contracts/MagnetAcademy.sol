@@ -2,12 +2,15 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./SchoolMagnet.sol";
 
-contract MagnetAcademy {
+contract MagnetAcademy is AccessControl {
     using Counters for Counters.Counter;
 
+    // Create a new role identifier for the admin role
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     address private _rector;
     Counters.Counter private _nbSchools;
     Counters.Counter private _schoolId;
@@ -20,16 +23,6 @@ contract MagnetAcademy {
     event SchoolCreated(address indexed schoolAddress, address indexed directorAddress, string name);
     event SchoolDeleted(address indexed schoolAddress, address indexed directorAddress);
     event DirectorSet(address indexed directorAddress, address indexed schoolAddress);
-
-    modifier OnlyRector() {
-        require(msg.sender == _rector, "MagnetAcademy: Only rector can perform this action");
-        _;
-    }
-
-    modifier OnlyAdmin() {
-        require(_admins[msg.sender] == true, "MagnetAcademy: Only administrators can perform this action");
-        _;
-    }
 
     modifier OnlySchoolDirector(address account) {
         require(_schoolDirectors[account] != address(0), "MagnetAcademy: Not a school director");
@@ -47,23 +40,26 @@ contract MagnetAcademy {
     }
 
     constructor(address rector_) {
+        _setupRole(DEFAULT_ADMIN_ROLE, rector_);
         _rector = rector_;
         _admins[rector_] = true;
     }
 
-    function addAdmin(address account) public OnlyRector() {
+    function addAdmin(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setupRole(ADMIN_ROLE, account);
         _admins[account] = true;
         emit AdminAdded(account);
     }
 
-    function revokeAdmin(address account) public OnlyRector() {
+    function revokeAdmin(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        revokeRole(ADMIN_ROLE, account);
         _admins[account] = false;
         emit AdminRevoked(account);
     }
 
     function changeSchoolDirector(address oldDirector, address newDirector)
         public
-        OnlyAdmin()
+        onlyRole(ADMIN_ROLE)
         OnlySchoolDirector(oldDirector)
         OnlyNotSchoolDirector(newDirector)
         returns (bool)
@@ -78,7 +74,7 @@ contract MagnetAcademy {
 
     function createSchool(string memory name, address directorAddress)
         public
-        OnlyAdmin()
+        onlyRole(ADMIN_ROLE)
         OnlyNotSchoolDirector(directorAddress)
         returns (bool)
     {
@@ -91,7 +87,12 @@ contract MagnetAcademy {
         return true;
     }
 
-    function deleteSchool(address schoolAddress) public OnlyAdmin() OnlySchoolAddress(schoolAddress) returns (bool) {
+    function deleteSchool(address schoolAddress)
+        public
+        onlyRole(ADMIN_ROLE)
+        OnlySchoolAddress(schoolAddress)
+        returns (bool)
+    {
         address directorAddress = _schools[schoolAddress];
         _schools[schoolAddress] = address(0);
         _schoolDirectors[directorAddress] = address(0);

@@ -63,12 +63,12 @@ describe('MagnetAcademy', function () {
       await expect(
         magnetAcademy.connect(lambdaUser).addAdmin(academyAdmin2.address),
         'a lambda user can not add a new admin'
-      ).to.be.revertedWith('MagnetAcademy: Only rector can perform this action');
+      ).to.be.revertedWith(`AccessControl: account ${lambdaUser.address} is missing role 0x0000000000000000000000000000000000000000000000000000000000000000`);
       // an admin can not add a new admin
       await expect(
         magnetAcademy.connect(academyAdmin1).addAdmin(academyAdmin2.address),
         'an admin can not add a new admin'
-      ).to.be.revertedWith('MagnetAcademy: Only rector can perform this action');
+      ).to.be.revertedWith(`AccessControl: account ${lambdaUser.address} is missing role 0x0000000000000000000000000000000000000000000000000000000000000000`);
     });
     it('A rector should be able to revoke an admin', async function () {
       expect(await magnetAcademy.isAdmin(academyAdmin1.address), 'academyAdmin1 should be an admin').to.be.true;
@@ -88,12 +88,12 @@ describe('MagnetAcademy', function () {
       await expect(
         magnetAcademy.connect(lambdaUser).revokeAdmin(academyAdmin2.address),
         'a lambda user can not revoke an admin'
-      ).to.be.revertedWith('MagnetAcademy: Only rector can perform this action');
+      ).to.be.revertedWith(`AccessControl: account ${lambdaUser.address} is missing role 0x0000000000000000000000000000000000000000000000000000000000000000`);
       // an admin can not revoke an admin
       await expect(
         magnetAcademy.connect(academyAdmin1).revokeAdmin(academyAdmin2.address),
         'an admin can not revoke an admin'
-      ).to.be.revertedWith('MagnetAcademy: Only rector can perform this action');
+      ).to.be.revertedWith(`AccessControl: account ${lambdaUser.address} is missing role 0x0000000000000000000000000000000000000000000000000000000000000000`);
     });
   });
 
@@ -136,7 +136,7 @@ describe('MagnetAcademy', function () {
     });
     it('Should revert if not created by admin', async function () {
       await expect(magnetAcademy.connect(lambdaUser).createSchool(school2Name, director2.address)).to.be.revertedWith(
-        'MagnetAcademy: Only administrators can perform this action'
+        `account ${lambdaUser.address} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
     });
     it('Should revert if director of new school is already mapped to a school', async function () {
